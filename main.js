@@ -1,21 +1,20 @@
 import "./style.css";
 import * as THREE from "three";
-// import * as dat from "lil-gui";
-// import gsap from "gsap";
+import * as dat from "lil-gui";
 
 /**
  * Debug
  */
-// const gui = new dat.GUI();
+const gui = new dat.GUI();
 
 const parameters = {
-  materialColor: "#ffeded",
+  materialColor: "#ffffff",
 };
 
-// gui.addColor(parameters, "materialColor").onChange(() => {
-//   material.color.set(parameters.materialColor);
-//   particlesMaterial.color.set(parameters.materialColor);
-// });
+gui.addColor(parameters, "materialColor").onChange(() => {
+  material.color.set(parameters.materialColor);
+  particlesMaterial.color.set(parameters.materialColor);
+});
 
 /**
  * Base
@@ -26,52 +25,48 @@ const canvas = document.querySelector("canvas.webgl");
 // Scene
 const scene = new THREE.Scene();
 
-//textures
-const textureLoader = new THREE.TextureLoader();
-// const grandientTexture = textureLoader.load("/textures/gradients/3.jpg");
-// grandientTexture.magFilter = THREE.NearestFilter; //テクスチャに近い色を返す。つまり補完しないから微妙な色にならない。
-
 /**
  * Objects
  */
 //material
-const material = new THREE.MeshToonMaterial({
-  color: parameters.color,
-  // gradientMap: grandientTexture,
+const material = new THREE.MeshPhysicalMaterial({
+  color: "#3c94d7",
+  metalness: 0.865,
+  roughness: 0.373,
+  flatShading: true,
 });
+
+gui.add(material, "metalness").min(0).max(1).step(0.001);
+gui.add(material, "roughness").min(0).max(1).step(0.001);
 
 // Meshes
 const objectDistance = 4;
 const mesh1 = new THREE.Mesh(new THREE.TorusGeometry(1, 0.4, 16, 60), material);
-const mesh2 = new THREE.Mesh(new THREE.ConeGeometry(1, 2, 32), material);
+const mesh2 = new THREE.Mesh(new THREE.OctahedronGeometry(), material);
 const mesh3 = new THREE.Mesh(
   new THREE.TorusKnotGeometry(0.8, 0.35, 100, 16),
   material
 );
-const mesh4 = new THREE.Mesh(new THREE.ExtrudeGeometry(), material);
+const mesh4 = new THREE.Mesh(new THREE.IcosahedronGeometry(), material);
 
 /* 回転用に配置する */
-mesh1.position.set(2, 0, 0);
-mesh2.position.set(-1, 0, 0);
-mesh3.position.set(2, 0, -6);
-mesh4.position.set(5, 0, 3);
+// mesh1.position.set(2, 0, 0);
+// mesh2.position.set(-1, 0, 0);
+// mesh3.position.set(2, 0, -6);
+// mesh4.position.set(5, 0, 3);
 
 scene.add(mesh1, mesh2, mesh3, mesh4);
-const sectionMeshes = [mesh1, mesh2, mesh3];
+const sectionMeshes = [mesh1, mesh2, mesh3, mesh4];
 
 /**
  * Particles
  */
 //geometry
-const particlesCount = 200;
+const particlesCount = 700;
 const positions = new Float32Array(particlesCount * 3);
 
 for (let i = 0; i < particlesCount; i++) {
-  positions[i * 3 + 0] = (Math.random() - 0.5) * 10;
-  positions[i * 3 + 1] =
-    objectDistance * 0.5 -
-    Math.random() * objectDistance * sectionMeshes.length;
-  positions[i * 3 + 2] = (Math.random() - 0.5) * 10;
+  positions[i] = (Math.random() - 0.5) * 10;
 }
 
 const particlesGeometry = new THREE.BufferGeometry();
@@ -84,7 +79,7 @@ particlesGeometry.setAttribute(
 const particlesMaterial = new THREE.PointsMaterial({
   color: parameters.materialColor,
   sizeAttenuation: true,
-  size: 0.035,
+  size: 0.025,
 });
 
 //Points
@@ -94,8 +89,8 @@ scene.add(particles);
 /**
  * Light
  *  */
-const directionalLight = new THREE.DirectionalLight("#ffffff", 1);
-directionalLight.position.set(1, 1, 0);
+const directionalLight = new THREE.DirectionalLight("#ffffff", 4);
+directionalLight.position.set(0.5, 1, 0);
 scene.add(directionalLight);
 
 /**
@@ -147,30 +142,6 @@ const renderer = new THREE.WebGLRenderer({
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-//scroll
-let scrollY = window.scrollY;
-let currentSection = 0;
-
-window.addEventListener("scroll", () => {
-  scrollY = window.scrollY;
-  /* スクロールすると回転軸を中心に回転させる。 */
-  // console.log(scrollY);
-  // const newSection = Math.round(scrollY / sizes.height);
-
-  // if (newSection != currentSection) {
-  //   currentSection = newSection;
-  //   console.log("changed", currentSection);
-  //   console.log(sectionMeshes[currentSection].rotation);
-  //   gsap.to(sectionMeshes[currentSection].rotation, {
-  //     duration: 1.5,
-  //     ease: "power2.inOut",
-  //     x: "+=6",
-  //     y: "+=3",
-  //     z: "+=1.5",
-  //   });
-  // }
-});
-
 //cursor
 const cursor = {};
 cursor.x = 0;
@@ -182,6 +153,33 @@ window.addEventListener("mousemove", (event) => {
 
   // console.log(cursor);
 });
+
+//wheel
+let speed = 0;
+let rotation = 0;
+window.addEventListener("wheel", (event) => {
+  // console.log(event.deltaY);
+  speed += event.deltaY * 0.0002;
+});
+
+function rot() {
+  rotation += speed;
+  speed *= 0.93;
+  // console.log(rotation);
+
+  mesh1.position.x = 2 + 3.8 * Math.cos(rotation);
+  mesh1.position.z = -3 + 3.8 * Math.sin(rotation);
+  mesh2.position.x = 2 + 3.8 * Math.cos(rotation + Math.PI / 2);
+  mesh2.position.z = -3 + 3.8 * Math.sin(rotation + Math.PI / 2);
+  mesh3.position.x = 2 + 3.8 * Math.cos(rotation + Math.PI);
+  mesh3.position.z = -3 + 3.8 * Math.sin(rotation + Math.PI);
+  mesh4.position.x = 2 + 3.8 * Math.cos(rotation + (3 * Math.PI) / 2);
+  mesh4.position.z = -3 + 3.8 * Math.sin(rotation + (3 * Math.PI) / 2);
+
+  window.requestAnimationFrame(rot);
+}
+
+rot();
 
 /**
  * Animate
@@ -205,7 +203,7 @@ const tick = () => {
   cameraGroup.position.y +=
     (parallaxY - cameraGroup.position.y) * 5 * deltaTime;
 
-  //aniamte
+  //mesh aniamte
   for (const mesh of sectionMeshes) {
     mesh.rotation.x += deltaTime * 0.1;
     mesh.rotation.y += deltaTime * 0.12;
