@@ -1,6 +1,7 @@
 import "./style.css";
 import * as THREE from "three";
 import * as dat from "lil-gui";
+import bg from "./images/bg.jpg";
 
 /**
  * デバッグ(色つけるときに追加)
@@ -32,6 +33,11 @@ const sizes = {
 
 // Scene
 const scene = new THREE.Scene();
+
+//背景テクスチャ
+const textureLoader = new THREE.TextureLoader();
+const bgTexture = textureLoader.load(bg);
+scene.background = bgTexture;
 
 //Camera
 
